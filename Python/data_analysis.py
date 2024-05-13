@@ -92,8 +92,6 @@ def get_start_end2(data):
     ) ** (1 / 2)
 
     pos = -1
-    neg = -1
-    min = float("inf")
     max = -float("inf")
     apex = -1
     max_apex = -float("inf")
@@ -122,7 +120,7 @@ def get_start_end2(data):
             start = i
             break
         # end
-    for i in range(start, data["controller_right_vel"]):
+    for i in range(start, len(data["controller_right_vel"])):
         if (
             abs(data["controller_right_vel.z"][i]) <= 0.2
             and abs(data["controller_right_vel.z"][i - 1]) > 0.2
