@@ -13,8 +13,30 @@ If we subtract controller pos from headset position
 
 -> near end 
 
-
 * UI solves for making people face correct direction
-
-
 -> Think on thresholds for velocity of swing for later
+
+
+** Simulated Racket Head **
+
+Calculate polar rotation of the controller ("What direction in xyz is up on the controller")
+Add 29 inches in that direction on each line
+Compute velocity from that position
+Find max.
+
+
+#Current Progress:
+We have a decent discriminator for start/end
+We have proof of concept that ML model is good at classifying
+
+Immediate TO DO:
+Figure out how to get it on a headset (i.e. run python on oculus in general)
+We need to check that the start/end function works on continuous data [we may need to collect data for this]
+    -> can check via subsets once we collect a long trace with multiple actions
+
+Future TO DO:
+Calculate simulated racket speed.
+    -> consider collecting ground truth?
+Existing follow through?
+Body rotation
+
