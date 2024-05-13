@@ -255,3 +255,33 @@ def test_accuracy(classifier, errors=False):
                 print(actual[i], predicted[i], csv_number[i])
 
     return metrics.accuracy_score(actual, predicted)
+
+
+def add_features(data):
+    """
+    Takes a raw sensor trace as a dataframe
+
+    Adds four features to the data:
+     - Controller right velocity
+     - Controller right velocity.x at max velocity
+     - Controller right velocity.y at max velocity
+     - Controller right pos.y relative to headset
+    
+    Returns the same dataframe, with the four new features.
+    """
+    
+    data['controller_right_vel'] = (data['controller_right_vel.x'] ** 2 + data['controller_right_vel.y'] ** 2 + data['controller_right_vel.z'] ** 2) ** (1/2)
+
+
+    idx_max = -1
+    mx = -float('inf') # Finding moment of maximum velocity
+    for i in range(len(data['controller_right_vel'])):
+        if float(data['controller_right_vel'][i]) > mx:
+            mx = float(data['controller_right_vel'][i])
+            idx_max = i
+    
+    data['controller_right_vel.x_at_max_vel'] = data['controller_right_vel.x'][idx_max]
+    data['controller_right_vel.y_at_max_vel'] = data['controller_right_vel.y'][idx_max]
+    data['controller_right_pos.y_rel_headset'] = data['controller_right_pos.y'] - data['headset_pos.y']
+
+    return data
