@@ -103,7 +103,7 @@ public class ActivityDetector : MonoBehaviour
             dx = data["racket.x"][i]-lastx;
             dy = data["racket.y"][i]-lasty;
             dz = data["racket.z"][i]-lastz;
-            vel = Math.Sqrt(
+            vel = (float) Math.Sqrt(
                 Math.Pow(dx, 2) +
                 Math.Pow(dy, 2) +
                 Math.Pow(dz, 2)
@@ -200,7 +200,7 @@ public class ActivityDetector : MonoBehaviour
             string res = AnalyzeSwing();
             //t.text = res + " innit?";
             PlayAudio(res);
-            t.text = AnalyzeSwing()+" innit?" + "\n Vel:" + MaxVelocity();
+            //t.text = AnalyzeSwing()+" innit?" + "\n Vel:" + MaxVelocity();
         }
     }
 }
