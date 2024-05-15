@@ -42,7 +42,7 @@ public class ActivityDetector : MonoBehaviour
     }
 
     //function to get up vector so that simulated position of racket can be found.
-    public static Vector3 GetUpVector(float yawDegrees, float pitchDegrees, float rollDegrees)
+    public static System.Numerics.Vector3 GetUpVector(float yawDegrees, float pitchDegrees, float rollDegrees)
     {
         float yaw = MathF.PI / 180 * yawDegrees;
         float pitch = MathF.PI / 180 * pitchDegrees;
@@ -54,9 +54,9 @@ public class ActivityDetector : MonoBehaviour
 
         Matrix4x4 matrix = Matrix4x4.Multiply(Matrix4x4.Multiply(yawMatrix, pitchMatrix), rollMatrix);
 
-        Vector3 initialUp = new Vector3(0, 1, 0);
+        System.Numerics.Vector3 initialUp = new System.Numerics.Vector3(0, 1, 0);
 
-        Vector3 transformedUp = Vector3.Transform(initialUp, matrix);
+        System.Numerics.Vector3 transformedUp = System.Numerics.Vector3.Transform(initialUp, matrix);
 
         return transformedUp;
     }
@@ -72,7 +72,7 @@ public class ActivityDetector : MonoBehaviour
         return numbers.Average();
     }
 
-    void appendData(Dictionary<string, Vector3> attributes) {
+    void appendData(Dictionary<string, UnityEngine.Vector3> attributes) {
         data["controller_right_pos.y"].Add(attributes["controller_right_pos"].y);
         data["controller_right_vel.x"].Add(attributes["controller_right_vel"].x);
         data["controller_right_vel.y"].Add(attributes["controller_right_vel"].y);
@@ -97,7 +97,7 @@ public class ActivityDetector : MonoBehaviour
         float lasty = data["racket.y"][0];
         float lastz = data["racket.z"][0];
         float dx, dy, dz, vel;
-        maxvel = 0
+        maxvel = 0;
         for(int i=1; i < data["racket.x"].Count; i++)
         {
             dx = data["racket.x"][i]-lastx;
