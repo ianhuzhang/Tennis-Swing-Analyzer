@@ -85,7 +85,7 @@ public class ActivityDetector : MonoBehaviour
         
         data["headset_vel.y"].Add(attributes["headset_vel"].y);
 
-        UpVector = GetUpVector(attributes["control_right_rot"].y, attributes["control_right_rot"].x, attributes["control_right_rot"].z);
+        System.Numerics.UpVector = GetUpVector(attributes["control_right_rot"].y, attributes["control_right_rot"].x, attributes["control_right_rot"].z);
         data["racket.x"] = attributes["controller_right_pos"].x + UpVector.x * racketlen;
         data["racket.y"] = attributes["controller_right_pos"].y + UpVector.y * racketlen;
         data["racket.z"] = attributes["controller_right_pos"].z + UpVector.z * racketlen;
@@ -97,7 +97,7 @@ public class ActivityDetector : MonoBehaviour
         float lasty = data["racket.y"][0];
         float lastz = data["racket.z"][0];
         float dx, dy, dz, vel;
-        maxvel = 0;
+        float maxvel = 0;
         for(int i=1; i < data["racket.x"].Count; i++)
         {
             dx = data["racket.x"][i]-lastx;
@@ -108,7 +108,7 @@ public class ActivityDetector : MonoBehaviour
                 Math.Pow(dy, 2) +
                 Math.Pow(dz, 2)
             );
-            maxvel = max(maxvel, vel);
+            maxvel = Math.Max(maxvel, vel);
             lastx = data["racket.x"][i];
             lasty = data["racket.y"][i];
             lastz = data["racket.z"][i];
