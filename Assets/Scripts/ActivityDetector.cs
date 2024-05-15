@@ -8,23 +8,29 @@ public class ActivityDetector : MonoBehaviour
     // Feel free to add additional class variables here
     OculusSensorReader sensorReader;
     public GameObject cur_act;
-    public Dictionary<string, Queue<float>> data;
+    public Dictionary<string, List<float>> data;
     public int cnt = 0;
     // Start is called before the first frame update
     void Start()
     {
         sensorReader = new OculusSensorReader();
         cur_act = GameObject.Find("Activity Sign");
-        data = new Dictionary<string, Queue<float>>();
-        data["controller_right_pos.y"] = new Queue<float>();
-        data["controller_right_vel.x"] = new Queue<float>();
-        data["controller_right_vel.y"] = new Queue<float>();
-        data["controller_right_pos.x"] = new Queue<float>();
-        data["headset_pos.y"] = new Queue<float>();
-        data["headset_pos.z"] = new Queue<float>();
-        data["controller_right_pos.z"] = new Queue<float>();
-        data["headset_vel.y"] = new Queue<float>();
-        data["controller_left_rot.z"] = new Queue<float>();
+        data = new Dictionary<string, List<float>>();
+        
+        data["controller_right_pos.y"] = new List<float>();
+        data["controller_right_pos.x"] = new List<float>();
+        data["controller_right_pos.z"] = new List<float>();
+
+        data["controller_right_vel.x"] = new List<float>();
+        data["controller_right_vel.y"] = new List<float>();
+        data["controller_right_vel.z"] = new List<float>();
+
+        data["controller_right_vel"] = new List<float>();
+
+        data["headset_pos.y"] = new List<float>();
+        data["headset_pos.z"] = new List<float>();
+        
+        data["headset_vel.y"] = new List<float>();
     }
 
     float CalculateStd(IEnumerable<float> values)
@@ -39,27 +45,82 @@ public class ActivityDetector : MonoBehaviour
     }
 
     void appendData(Dictionary<string, Vector3> attributes) {
-        data["controller_right_pos.y"].Enqueue(attributes["controller_right_pos"].y);
-        data["controller_right_vel.x"].Enqueue(attributes["controller_right_vel"].x);
-        data["controller_right_vel.y"].Enqueue(attributes["controller_right_vel"].y);
-        data["controller_right_pos.x"].Enqueue(attributes["controller_right_pos"].x);
-        data["headset_pos.y"].Enqueue(attributes["headset_pos"].y);
-        data["headset_pos.z"].Enqueue(attributes["headset_pos"].z);
-        data["controller_right_pos.z"].Enqueue(attributes["controller_right_pos"].z);
-        data["headset_vel.y"].Enqueue(attributes["headset_vel"].y);
-        data["controller_left_rot.z"].Enqueue(attributes["controller_left_rot"].z);        
+        data["controller_right_pos.y"].Add(attributes["controller_right_pos"].y);
+        data["controller_right_vel.x"].Add(attributes["controller_right_vel"].x);
+        data["controller_right_vel.y"].Add(attributes["controller_right_vel"].y);
+        data["controller_right_pos.x"].Add(attributes["controller_right_pos"].x);
+        data["controller_right_pos.z"].Add(attributes["controller_right_pos"].z);
+        data["controller_right_vel.z"].Add(attributes["controller_right_vel"].z);
+
+        data["headset_pos.y"].Add(attributes["headset_pos"].y);
+        data["headset_pos.z"].Add(attributes["headset_pos"].z);
+        
+        data["headset_vel.y"].Add(attributes["headset_vel"].y);
     }
+
+    string AnalyzeSwing()
+    {
+        // Calculate the magnitude of the right controller's velocity vector
+        for (int i = 0; i < data["controller_right_vel.x"].Count; i++)
+        {
+            data["controller_right_vel"].Add( (float) Math.Sqrt(
+                Math.Pow(data["controller_right_vel.x"][i], 2) +
+                Math.Pow(data["controller_right_vel.y"][i], 2) +
+                Math.Pow(data["controller_right_vel.z"][i], 2)
+            ));
+        }
+
+        // Find the index of the maximum velocity
+        int idxMax = -1;
+        double maxVelocity = Double.NegativeInfinity;
+        for (int i = 0; i < data["controller_right_vel"].Count; i++)
+        {
+            int index = i;
+            if (data["controller_right_vel"][index] > maxVelocity)
+            {
+                maxVelocity = data["controller_right_vel"][index];
+                idxMax = index;
+            }
+        }
+
+        // Analyze the direction of the swing at the point of maximum velocity
+        if (data["controller_right_vel.y"][idxMax] > 0) // If swing moves upwards
+        {
+            // Determine if swing is FHD or BHD based on left/right movement
+            if (data["controller_right_vel.x"][idxMax] < 0) // If swing moves left
+                return "it was a forehand";
+            else
+                return "it was a backhand";
+        }
+        else // If swing does not move upwards
+        {
+            // Check relative position of the controller to the headset
+            double maxHeightDifference = 0;
+            for (int i = 0; i < data["controller_right_pos.y"].Count; i++)
+            {
+                double heightDifference = data["controller_right_pos.y"][i] - data["headset_pos.y"][i];
+                if (heightDifference > maxHeightDifference)
+                    maxHeightDifference = heightDifference;
+            }
+
+            if (maxHeightDifference > 0.2) // Threshold to determine SRV or VOL
+                return "it was a serve";
+            else
+                return "it was a volley";
+        }
+    }
+
+
 
     // Update is called once per frame
     void Update()
     {
-        
         sensorReader.RefreshTrackedDevices();
         var attributes = sensorReader.GetSensorReadings();
         
- 
         TextMesh t = cur_act.GetComponent<TextMesh> ();
         bool aButtonFirstPressed = OVRInput.GetDown(OVRInput.Button.One);
+        bool aButtonReleased = OVRInput.GetUp(OVRInput.Button.One);
         bool aButtonPressed = OVRInput.Get(OVRInput.Button.One);
         if (aButtonFirstPressed){
             foreach(var item in data.Values)
@@ -69,9 +130,11 @@ public class ActivityDetector : MonoBehaviour
         }
         if (aButtonPressed){
             appendData(attributes);
-            t.text = CalculateAverage(data["controller_right_pos.y"]).ToString("0.0000");
-        }else{
-            t.text = "Waiting";
+            //t.text = CalculateAverage(data["controller_right_pos.y"]).ToString("0.0000");
+            t.text = "Recording";
+        }
+        if (aButtonReleased){
+            t.text = AnalyzeSwing()+" innit?";
         }
     }
 }
