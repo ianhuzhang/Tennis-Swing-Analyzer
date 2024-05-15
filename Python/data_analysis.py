@@ -285,3 +285,85 @@ def add_features(data):
     data['controller_right_pos.y_rel_headset'] = data['controller_right_pos.y'] - data['headset_pos.y']
 
     return data
+
+
+
+def get_start_end_after_classification(data, swing):
+    """
+    Another preliminary Function to determine start and end indices for a given FHD
+    or BHD sensor trace. However this also takes in classification results for
+    more accurate results.
+
+    Returns tuple, of indices at which start and end of swing are estimated
+    to be.
+    """
+    start = 0
+    end = len(data["controller_right_vel.z"])
+
+    data["controller_right_vel"] = (
+        data["controller_right_vel.x"] ** 2
+        + data["controller_right_vel.y"] ** 2
+        + data["controller_right_vel.z"] ** 2
+    ) ** (1 / 2)
+
+    pos = -1
+    neg = -1
+    min = float("inf")
+    max = -float("inf")
+    apex = -1
+    max_apex = -float("inf")
+
+    for i in range(
+        len(data["controller_right_vel"])
+    ):  # Finding moment of highest Velocity
+        if float(data["controller_right_vel"][i]) > max_apex:
+            apex = i
+            max_apex = data["controller_right_vel"][i]
+
+    for i in range(apex):
+        if (
+            float(data["controller_right_vel.z"][i]) > max
+        ):  # Finding moment of highest velocity forwards, up to apex
+            max = float(data["controller_right_vel.z"][i])
+            pos = i
+    for i in range(
+        apex, len(data["controller_right_vel.z"])
+    ):  # Finding moment of highest velocity backwards, after apex
+        if float(data["controller_right_vel.z"][i]) < min:
+            min = float(data["controller_right_vel.z"][i])
+            neg = i
+
+    for i in range(pos, 0, -1):  
+        # Search backwards from moment of highest velocity forwards. Finds moment when z-velocity becomes significant.
+        if (
+            data["controller_right_vel.z"][i] >= 0.2
+            and data["controller_right_vel.z"][i - 1] < 0.2
+        ):
+            start = i
+            break
+
+    if (
+        swing != 'VOL'
+    ):  
+        for i in range(
+            neg, len(data["controller_right_vel.z"]) - 1
+        ):  # Search forwards from moment of highest velocity backwards. Finds moment when z-velocity becomes insignificant.
+            if (
+                data["controller_right_vel.z"][i] <= -0.2
+                and data["controller_right_vel.z"][i + 1] > -0.2
+            ):
+                end = i + 1
+                break
+
+    else:
+        for i in range(
+            pos, len(data["controller_right_vel.z"]) - 1
+        ):  # Search forwards from moment of highest velocity forwards. Finds moment when z-velocity becomes insignificant.
+            if (
+                data["controller_right_vel.z"][i] >= 0.2
+                and data["controller_right_vel.z"][i + 1] < 0.2
+            ):
+                end = i + 1
+                break
+
+    return (start, end)
