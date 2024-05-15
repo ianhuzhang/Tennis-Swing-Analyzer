@@ -8,13 +8,16 @@ public class ActivityDetector : MonoBehaviour
     // Feel free to add additional class variables here
     OculusSensorReader sensorReader;
     public GameObject cur_act;
+    public GameObject court;
     public Dictionary<string, List<float>> data;
-    public int cnt = 0;
+    AudioSource myAudioSource = new AudioSource();
+
     // Start is called before the first frame update
     void Start()
     {
         sensorReader = new OculusSensorReader();
         cur_act = GameObject.Find("Activity Sign");
+        court = GameObject.Find("court");
         data = new Dictionary<string, List<float>>();
         
         data["controller_right_pos.y"] = new List<float>();
@@ -88,9 +91,9 @@ public class ActivityDetector : MonoBehaviour
         {
             // Determine if swing is FHD or BHD based on left/right movement
             if (data["controller_right_vel.x"][idxMax] < 0) // If swing moves left
-                return "it was a forehand";
+                return "forehand";
             else
-                return "it was a backhand";
+                return "backhand";
         }
         else // If swing does not move upwards
         {
@@ -104,13 +107,18 @@ public class ActivityDetector : MonoBehaviour
             }
 
             if (maxHeightDifference > 0.2) // Threshold to determine SRV or VOL
-                return "it was a serve";
+                return "serve";
             else
-                return "it was a volley";
+                return "volley";
         }
     }
 
-
+    void PlayAudio(string filename)
+    {
+        AudioSource myAudioSource = cur_act.GetComponent<AudioSource> ();
+        myAudioSource.clip = Resources.Load<AudioClip>("Audio/" + filename);
+        myAudioSource.Play();
+    }
 
     // Update is called once per frame
     void Update()
@@ -119,6 +127,7 @@ public class ActivityDetector : MonoBehaviour
         var attributes = sensorReader.GetSensorReadings();
         
         TextMesh t = cur_act.GetComponent<TextMesh> ();
+        
         bool aButtonFirstPressed = OVRInput.GetDown(OVRInput.Button.One);
         bool aButtonReleased = OVRInput.GetUp(OVRInput.Button.One);
         bool aButtonPressed = OVRInput.Get(OVRInput.Button.One);
@@ -134,7 +143,9 @@ public class ActivityDetector : MonoBehaviour
             t.text = "Recording";
         }
         if (aButtonReleased){
-            t.text = AnalyzeSwing()+" innit?";
+            string res = AnalyzeSwing();
+            t.text = res + " innit?";
+            PlayAudio(res);
         }
     }
 }
