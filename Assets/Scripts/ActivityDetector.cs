@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Numerics;
 using UnityEngine;
 
 public class ActivityDetector : MonoBehaviour
@@ -10,8 +11,8 @@ public class ActivityDetector : MonoBehaviour
     public GameObject cur_act;
     public GameObject court;
     public Dictionary<string, List<float>> data;
-    AudioSource myAudioSource = new AudioSource();
-
+    public int cnt = 0;
+    float racketlen = .68;
     // Start is called before the first frame update
     void Start()
     {
@@ -34,6 +35,30 @@ public class ActivityDetector : MonoBehaviour
         data["headset_pos.z"] = new List<float>();
         
         data["headset_vel.y"] = new List<float>();
+
+        data["racket.x"] = new List<float>();
+        data["racket.y"] = new List<float>();
+        data["racket.z"] = new List<float>();
+    }
+
+    //function to get up vector so that simulated position of racket can be found.
+    public static Vector3 GetUpVector(float yawDegrees, float pitchDegrees, float rollDegrees)
+    {
+        float yaw = MathF.PI / 180 * yawDegrees;
+        float pitch = MathF.PI / 180 * pitchDegrees;
+        float roll = MathF.PI / 180 * rollDegrees;
+
+        Matrix4x4 yawMatrix = Matrix4x4.CreateRotationY(yaw);
+        Matrix4x4 pitchMatrix = Matrix4x4.CreateRotationX(pitch);
+        Matrix4x4 rollMatrix = Matrix4x4.CreateRotationZ(roll);
+
+        Matrix4x4 matrix = Matrix4x4.Multiply(Matrix4x4.Multiply(yawMatrix, pitchMatrix), rollMatrix);
+
+        Vector3 initialUp = new Vector3(0, 1, 0);
+
+        Vector3 transformedUp = Vector3.Transform(initialUp, matrix);
+
+        return transformedUp;
     }
 
     float CalculateStd(IEnumerable<float> values)
@@ -59,8 +84,37 @@ public class ActivityDetector : MonoBehaviour
         data["headset_pos.z"].Add(attributes["headset_pos"].z);
         
         data["headset_vel.y"].Add(attributes["headset_vel"].y);
-    }
 
+        UpVector = GetUpVector(attributes["control_right_rot"].y, attributes["control_right_rot"].x, attributes["control_right_rot"].z);
+        data["racket.x"] = attributes["controller_right_pos"].x + UpVector.x * racketlen;
+        data["racket.y"] = attributes["controller_right_pos"].y + UpVector.y * racketlen;
+        data["racket.z"] = attributes["controller_right_pos"].z + UpVector.z * racketlen;
+    }
+    //outputs maximimum velocity of simulated racket head in dictionary as a stirng
+    string MaxVelocity()
+    {
+        float lastx = data["racket.x"][0];
+        float lasty = data["racket.y"][0];
+        float lastz = data["racket.z"][0];
+        float dx, dy, dz, vel;
+        maxvel = 0
+        for(int i=1; i < data["racket.x"].Count; i++)
+        {
+            dx = data["racket.x"][i]-lastx;
+            dy = data["racket.y"][i]-lasty;
+            dz = data["racket.z"][i]-lastz;
+            vel = Math.Sqrt(
+                Math.Pow(dx, 2) +
+                Math.Pow(dy, 2) +
+                Math.Pow(dz, 2)
+            );
+            maxvel = max(maxvel, vel);
+            lastx = data["racket.x"][i];
+            lasty = data["racket.y"][i];
+            lastz = data["racket.z"][i];
+        }
+        return string.Format("{0:N2}", maxvel);
+    }
     string AnalyzeSwing()
     {
         // Calculate the magnitude of the right controller's velocity vector
@@ -144,8 +198,9 @@ public class ActivityDetector : MonoBehaviour
         }
         if (aButtonReleased){
             string res = AnalyzeSwing();
-            t.text = res + " innit?";
+            //t.text = res + " innit?";
             PlayAudio(res);
+            t.text = AnalyzeSwing()+" innit?" + "\n Vel:" + MaxVelocity();
         }
     }
 }
