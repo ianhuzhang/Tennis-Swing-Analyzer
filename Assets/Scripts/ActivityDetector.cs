@@ -48,11 +48,11 @@ public class ActivityDetector : MonoBehaviour
         float pitch = MathF.PI / 180 * pitchDegrees;
         float roll = MathF.PI / 180 * rollDegrees;
 
-        Matrix4x4 yawMatrix = Matrix4x4.CreateRotationY(yaw);
-        Matrix4x4 pitchMatrix = Matrix4x4.CreateRotationX(pitch);
-        Matrix4x4 rollMatrix = Matrix4x4.CreateRotationZ(roll);
+        System.Numerics.Matrix4x4 yawMatrix = System.Numerics.Matrix4x4.CreateRotationY(yaw);
+        System.Numerics.Matrix4x4 pitchMatrix = System.Numerics.Matrix4x4.CreateRotationX(pitch);
+        System.Numerics.Matrix4x4 rollMatrix = System.Numerics.Matrix4x4.CreateRotationZ(roll);
 
-        Matrix4x4 matrix = Matrix4x4.Multiply(Matrix4x4.Multiply(yawMatrix, pitchMatrix), rollMatrix);
+        System.Numerics.Matrix4x4 matrix = System.Numerics.Matrix4x4.Multiply(System.Numerics.Matrix4x4.Multiply(yawMatrix, pitchMatrix), rollMatrix);
 
         System.Numerics.Vector3 initialUp = new System.Numerics.Vector3(0, 1, 0);
 
@@ -85,7 +85,7 @@ public class ActivityDetector : MonoBehaviour
         
         data["headset_vel.y"].Add(attributes["headset_vel"].y);
 
-        System.Numerics.UpVector = GetUpVector(attributes["control_right_rot"].y, attributes["control_right_rot"].x, attributes["control_right_rot"].z);
+        System.Numerics.Vector3 UpVector = GetUpVector(attributes["control_right_rot"].y, attributes["control_right_rot"].x, attributes["control_right_rot"].z);
         data["racket.x"] = attributes["controller_right_pos"].x + UpVector.x * racketlen;
         data["racket.y"] = attributes["controller_right_pos"].y + UpVector.y * racketlen;
         data["racket.z"] = attributes["controller_right_pos"].z + UpVector.z * racketlen;
