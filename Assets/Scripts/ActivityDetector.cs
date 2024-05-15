@@ -12,7 +12,7 @@ public class ActivityDetector : MonoBehaviour
     public GameObject court;
     public Dictionary<string, List<float>> data;
     public int cnt = 0;
-    float racketlen = .68;
+    float racketlen = 0.68f;
     // Start is called before the first frame update
     void Start()
     {
