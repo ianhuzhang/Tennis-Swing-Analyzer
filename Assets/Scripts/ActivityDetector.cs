@@ -86,9 +86,9 @@ public class ActivityDetector : MonoBehaviour
         data["headset_vel.y"].Add(attributes["headset_vel"].y);
 
         System.Numerics.Vector3 UpVector = GetUpVector(attributes["control_right_rot"].y, attributes["control_right_rot"].x, attributes["control_right_rot"].z);
-        data["racket.x"] = attributes["controller_right_pos"].x + UpVector.x * racketlen;
-        data["racket.y"] = attributes["controller_right_pos"].y + UpVector.y * racketlen;
-        data["racket.z"] = attributes["controller_right_pos"].z + UpVector.z * racketlen;
+        data["racket.x"] = attributes["controller_right_pos"].x + UpVector.X * racketlen;
+        data["racket.y"] = attributes["controller_right_pos"].y + UpVector.Y * racketlen;
+        data["racket.z"] = attributes["controller_right_pos"].z + UpVector.Z * racketlen;
     }
     //outputs maximimum velocity of simulated racket head in dictionary as a stirng
     string MaxVelocity()
