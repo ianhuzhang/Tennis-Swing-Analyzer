@@ -406,6 +406,6 @@ def get_rotation(filepath, prediction=None, start_end=None):
         dot = vec1[0] * vec2[0] + vec1[1] * vec2[1]
         mag1 = (vec1[0] ** 2 + vec1[1] ** 2) ** 0.5
         mag2 = (vec2[0] ** 2 + vec2[1] ** 2) ** 0.5
-        res += math.acos(dot/mag1/mag2)
+        res += math.acos(dot/mag1/mag2) #arc cosine
 
-    return res * 180 / math.pi
+    return res * 180 / math.pi # WE SHOULD ALSO DECIDE WHAT IS A "GOOD ROTATION" AMOUNT
