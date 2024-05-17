@@ -485,8 +485,13 @@ def get_follow_through(filepath, prediction=None, start_end = None):
         if tup[1] < 0: # Checks "forward depth" of controller vs. headset
             print("Try to end your volley in front of your body!")
             success = False
-        #if tup[0] < 0: # Checks left/right position of contrller vs. headset
-        #    print("Make sure to finish on the right side of your body!")
-        #    success = False
+
+        # Ideally here, we can use Jason's "GetUpVector" function, then check
+        # Whether the controller is pointing upwards at the end of the swing.
+        # Something like:
+        # if (UpVector.Y < 0):
+        #   print("Try to end your volley with your racquet head pointing upwards!")
+        #   success = False
+    
         if success:
             print("Nice shot!")
