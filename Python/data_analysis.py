@@ -409,3 +409,84 @@ def get_rotation(filepath, prediction=None, start_end=None):
         res += math.acos(dot/mag1/mag2) #arc cosine
 
     return res * 180 / math.pi # WE SHOULD ALSO DECIDE WHAT IS A "GOOD ROTATION" AMOUNT
+
+
+
+def get_follow_through(filepath, prediction=None, start_end = None):
+    """
+    Script to get follow through analytics, given a filepath to a CSV sensor trace.
+
+    Takes optional parameters:
+        prediction: (str): ("SRV", "FHD", "BHD", "VOL")
+        start_end: (tuple(int, int)): start and end of swing
+    
+    If these optional parameters are not given, they are computed and then used.
+    """
+    data = pd.read_csv(filepath, index_col=False)
+
+    if not prediction:
+        prediction = stat_classifier(filepath)
+    if not start_end:
+        _, end = get_start_end_after_classification(data, prediction)
+    else:
+        _, end = start_end
+
+    tup = (data['controller_right_pos.x'][end] - data['headset_pos.x'][end], data['controller_right_pos.z'][end] - data['headset_pos.z'][end], data['controller_right_pos.y'][end] - data['headset_pos.y'][end])
+
+    if prediction == "FHD":
+        success = True
+        if tup[2] < -0.2: # Checks height of controller vs. height of headset
+            print("Try to follow-through a bit higher, over your shoulder!")
+            success = False
+        if tup[1] > 0: # Checks "forward depth" of controller vs. headset
+            print("Try to end your swing further back!")
+            success = False
+        if tup[0] > 0: # Checks left/right position of contrller vs. headset
+            print("Make sure to complete your follow-through on the left side of your body!")
+            success = False
+        if success:
+            print("Nice follow through!")
+
+    if prediction == "BHD":
+        success = True
+        if tup[2] < -0.2: # Checks height of controller vs. height of headset
+            print("Try to follow-through a bit higher, over your shoulder!")
+            success = False
+        if tup[1] > 0: # Checks "forward depth" of controller vs. headset
+            print("Try to end your swing further back!")
+            success = False
+        if tup[0] < 0: # Checks left/right position of contrller vs. headset
+            print("Make sure to complete your follow-through on the right side of your body!")
+            success = False
+        if success:
+            print("Nice follow through!")
+
+    if prediction == "SRV":
+        success = True
+        if -1 * tup[2] < max(data["controller_right_pos.y"] - data["headset_pos.y"]):
+            # Checks height of controller vs headset, makes sure difference is
+            # at least as much as difference during peak of serve
+            print("Try to finish a bit lower, near your waist!")
+            success = False
+        if tup[1] > 0: # Checks "forward depth" of controller vs. headset
+            print("Try to end your swing further back!")
+            success = False
+        if tup[0] < 0: # Checks left/right position of contrller vs. headset
+            print("Make sure to complete your follow-through on the left side of your body!")
+            success = False
+        if success:
+            print("Nice follow through!")
+    
+    if prediction == "VOL":
+        success = True
+        if tup[2] > 0: # Checks height of controller vs. height of headset
+            print("Try to keep your hand below your head in a volley!!")
+            success = False
+        if tup[1] < 0: # Checks "forward depth" of controller vs. headset
+            print("Try to end your volley in front of your body!")
+            success = False
+        #if tup[0] < 0: # Checks left/right position of contrller vs. headset
+        #    print("Make sure to finish on the right side of your body!")
+        #    success = False
+        if success:
+            print("Nice shot!")
