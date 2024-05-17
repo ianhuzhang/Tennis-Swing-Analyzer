@@ -1,5 +1,6 @@
 import pandas as pd
 from sklearn import metrics
+import math
 
 
 def get_start_end(data):
@@ -367,3 +368,44 @@ def get_start_end_after_classification(data, swing):
                 break
 
     return (start, end)
+
+
+
+def get_rotation(filepath, prediction=None, start_end=None):
+    """
+    Script to get controller rotation around the body, given a filepath to a 
+    CSV sensor trace.
+
+    Takes optional parameters:
+        prediction: (str): ("SRV", "FHD", "BHD", "VOL")
+        start_end: (tuple(int, int)): start and end of swing
+    
+    If these optional parameters are not given, they are computed and then used.
+
+    Returns the degrees of rotation that the controller goes through.
+    """
+    data = pd.read_csv(filepath, index_col=False)
+
+    # When implementing this in actual app, don't re-compute these values!
+    # We already have the prediction, and start_end values. Just pass them
+    # to this function!!!
+    if not prediction:
+        prediction = stat_classifier(filepath)
+    if not start_end:
+        start, end = get_start_end_after_classification(data, prediction)
+    else:
+        start, end = start_end
+    ### 
+
+
+    res = 0
+    for i in range(start, end-2):
+        vec1 = (data['controller_right_pos.x'][i] - data['headset_pos.x'][i], data['controller_right_pos.z'][i] - data['headset_pos.z'][i])
+        vec2 = (data['controller_right_pos.x'][i+1] - data['headset_pos.x'][i+1], data['controller_right_pos.z'][i+1] - data['headset_pos.z'][i+1])
+
+        dot = vec1[0] * vec2[0] + vec1[1] * vec2[1]
+        mag1 = (vec1[0] ** 2 + vec1[1] ** 2) ** 0.5
+        mag2 = (vec2[0] ** 2 + vec2[1] ** 2) ** 0.5
+        res += math.acos(dot/mag1/mag2)
+
+    return res * 180 / math.pi
