@@ -412,6 +412,7 @@ def get_rotation(filepath, prediction=None, start_end=None):
     return res * 180 / math.pi # WE SHOULD ALSO DECIDE WHAT IS A "GOOD ROTATION" AMOUNT
 """
 
+
 def get_rotation_2(filepath, prediction=None, start_end=None):
 
     """
@@ -443,13 +444,14 @@ def get_rotation_2(filepath, prediction=None, start_end=None):
         vec1 = (data['controller_right_pos.x'][i] - data['headset_pos.x'][i], data['controller_right_pos.z'][i] - data['headset_pos.z'][i], 0)
         vec2 = (data['controller_right_pos.x'][i+1] - data['headset_pos.x'][i+1], data['controller_right_pos.z'][i+1] - data['headset_pos.z'][i+1], 0)
 
-        #vec1 = (data['controller_right_pos.x'][i] - data['headset_pos.x'][start], data['controller_right_pos.z'][i] - data['headset_pos.z'][start], 0)
-        #vec2 = (data['controller_right_pos.x'][i+1] - data['headset_pos.x'][start], data['controller_right_pos.z'][i+1] - data['headset_pos.z'][start], 0)
-
+        # X.Y = |x||y|cos(angle)
+        # angle = arccos[(X.Y)/(|x||y|)]
         dot = vec1[0] * vec2[0] + vec1[1] * vec2[1]
         mag1 = (vec1[0] ** 2 + vec1[1] ** 2) ** 0.5
         mag2 = (vec2[0] ** 2 + vec2[1] ** 2) ** 0.5
 
+
+        # START: Can get rid of this if you want. Just does sanity check
         if prediction == "FHD":
             if np.cross(vec1, vec2)[2] > 0:
                 res += math.acos(dot/mag1/mag2)
@@ -458,10 +460,8 @@ def get_rotation_2(filepath, prediction=None, start_end=None):
                 res += math.acos(dot/mag1/mag2)
         else:
             res += math.acos(dot/mag1/mag2)
+        ### END
 
-        # X.Y = |x||y|cos(angle)
-        # angle = arccos[(X.Y)/(|x||y|)]
-        #print(np.cross(vec1, vec2))
 
     return res * 180 / math.pi
 
