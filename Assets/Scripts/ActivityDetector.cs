@@ -75,13 +75,15 @@ public class ActivityDetector : MonoBehaviour
     }
 
     void appendData(Dictionary<string, UnityEngine.Vector3> attributes) {
-        data["controller_right_pos.y"].Add(attributes["controller_right_pos"].y);
         data["controller_right_vel.x"].Add(attributes["controller_right_vel"].x);
         data["controller_right_vel.y"].Add(attributes["controller_right_vel"].y);
-        data["controller_right_pos.x"].Add(attributes["controller_right_pos"].x);
-        data["controller_right_pos.z"].Add(attributes["controller_right_pos"].z);
         data["controller_right_vel.z"].Add(attributes["controller_right_vel"].z);
 
+        data["controller_right_pos.x"].Add(attributes["controller_right_pos"].x);
+        data["controller_right_pos.y"].Add(attributes["controller_right_pos"].y);
+        data["controller_right_pos.z"].Add(attributes["controller_right_pos"].z);
+
+        // Calculate the magnitude of the right controller's velocity vector
         data["controller_right_vel"].Add( (float) Math.Sqrt(
                 Math.Pow(attributes["controller_right_vel"].x, 2) +
                 Math.Pow(attributes["controller_right_vel"].y, 2) +
@@ -101,7 +103,7 @@ public class ActivityDetector : MonoBehaviour
 
     }
     //outputs maximimum velocity of simulated racket head in dictionary as a stirng
-    string MaxVelocity()
+    string GetMaxVelocity()
     {
         float lastx = data["racket.x"][0];
         float lasty = data["racket.y"][0];
@@ -200,15 +202,12 @@ public class ActivityDetector : MonoBehaviour
         return (start, end);
     }
     float GetRotation(){
-        //int start, end;
         var cur = GetStartEndAfterClassification();
         int start = cur.Item1;
         int end = cur.Item2;
         float res = 0;
         
         for (int i = start; i < end-2;i++){
-            //var vec1 = new float[] {10,10,10};
-            //var vec2 = new float[] {10,10,10};
             var vec1 = new float[] {data["controller_right_pos.x"][i] - data["headset_pos.x"][i], data["controller_right_pos.z"][i] - data["headset_pos.z"][i], 0};
             var vec2 = new float[] {data["controller_right_pos.x"][i+1] - data["headset_pos.x"][i+1], data["controller_right_pos.z"][i+1] - data["headset_pos.z"][i+1], 0};
             float dot = vec1[0] * vec2[0] + vec1[1] * vec2[1];
@@ -241,20 +240,93 @@ public class ActivityDetector : MonoBehaviour
         return res * 180 / (float) Math.PI;
     }
 
+    string GetFollowThrough()
+    {
+        var cur = GetStartEndAfterClassification();
+        int start = cur.Item1;
+        int end = cur.Item2;
+        var tup = new float[]
+        {
+            data["controller_right_pos.x"][end] - data["headset_pos.x"][end],
+            data["controller_right_pos.z"][end] - data["headset_pos.z"][end],
+            data["controller_right_pos.y"][end] - data["headset_pos.y"][end]
+        };
+        return string.Join(", ", tup);
+        if (cur_action == "forehand")
+        {
+            if (tup[2] < -0.2f)
+            {
+                return "Try to follow-through a bit higher, over your shoulder!";
+            }
+            if (tup[1] > 0)
+            {
+                return "Try to end your swing further back!";
+            }
+            if (tup[0] > 0)
+            {
+                return "Make sure to complete your follow-through on the left side of your body!";
+            }
+
+            return "Nice follow through!";
+
+        }
+
+        if (cur_action == "backhand")
+        {
+            if (tup[2] < -0.2f)
+            {
+                return "Try to follow-through a bit higher, over your shoulder!";
+            }
+            if (tup[1] > 0)
+            {
+                return "Try to end your swing further back!";
+            }
+            if (tup[0] < 0)
+            {
+                return "Make sure to complete your follow-through on the right side of your body!";
+            }
+
+                return "Nice follow through!";
+        }
+
+        if (cur_action == "serve")
+        {
+            if (-1 * tup[2] < data["controller_right_pos.y"].Max() - data["headset_pos.y"].Max())
+            {
+                return "Try to finish a bit lower, near your waist!";
+            }
+            if (tup[1] > 0)
+            {
+                return "Try to end your swing further back!";
+            }
+            if (tup[0] < 0)
+            {
+                return "Make sure to complete your follow-through on the left side of your body!";
+            }
+
+                return "Nice follow through!";
+
+        }
+
+        if (cur_action == "volley")
+        {
+            if (tup[2] > 0)
+            {
+                return "Try to keep your hand below your head in a volley!!";
+            }
+            if (tup[1] < 0)
+            {
+                return "Try to end your volley in front of your body!";
+            }
+
+                return "Nice shot!";
+
+        }
+        return "error";
+    }
+
     string AnalyzeSwing()
     {
-        /*
-        // this is now done in appenddata
-        // Calculate the magnitude of the right controller's velocity vector
-        for (int i = 0; i < data["controller_right_vel.x"].Count; i++)
-        {
-            data["controller_right_vel"].Add( (float) Math.Sqrt(
-                Math.Pow(data["controller_right_vel.x"][i], 2) +
-                Math.Pow(data["controller_right_vel.y"][i], 2) +
-                Math.Pow(data["controller_right_vel.z"][i], 2)
-            ));
-        }
-        */
         // Find the index of the maximum velocity
         int idxMax = -1;
         double maxVelocity = Double.NegativeInfinity;
@@ -328,9 +400,10 @@ public class ActivityDetector : MonoBehaviour
             cur_action = AnalyzeSwing();
             PlayAudio(cur_action);
             t.text = cur_action+" innit?";
-            t.text +=  "\n Vel:" + MaxVelocity();
+            t.text +=  "\n Vel:" + GetMaxVelocity();
             t.text += "\n S/E:" + GetStartEndAfterClassification();
             t.text += "\n Rot:" + GetRotation();
+            t.text += "\n Feedback:" + GetFollowThrough();
         }
     }
 }
