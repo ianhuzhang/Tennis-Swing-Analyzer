@@ -32,6 +32,7 @@ public class ActivityDetector : MonoBehaviour
 
         data["controller_right_vel"] = new List<float>();
 
+        data["headset_pos.x"] = new List<float>();
         data["headset_pos.y"] = new List<float>();
         data["headset_pos.z"] = new List<float>();
         
@@ -87,6 +88,7 @@ public class ActivityDetector : MonoBehaviour
                 Math.Pow(attributes["controller_right_vel"].z, 2)
         ));
 
+        data["headset_pos.x"].Add(attributes["headset_pos"].x);
         data["headset_pos.y"].Add(attributes["headset_pos"].y);
         data["headset_pos.z"].Add(attributes["headset_pos"].z);
         
@@ -203,7 +205,10 @@ public class ActivityDetector : MonoBehaviour
         int start = cur.Item1;
         int end = cur.Item2;
         float res = 0;
+        
         for (int i = start; i < end-2;i++){
+            //var vec1 = new float[] {10,10,10};
+            //var vec2 = new float[] {10,10,10};
             var vec1 = new float[] {data["controller_right_pos.x"][i] - data["headset_pos.x"][i], data["controller_right_pos.z"][i] - data["headset_pos.z"][i], 0};
             var vec2 = new float[] {data["controller_right_pos.x"][i+1] - data["headset_pos.x"][i+1], data["controller_right_pos.z"][i+1] - data["headset_pos.z"][i+1], 0};
             float dot = vec1[0] * vec2[0] + vec1[1] * vec2[1];
@@ -211,7 +216,7 @@ public class ActivityDetector : MonoBehaviour
             float mag2 = (float)Math.Sqrt(vec2[0] * vec2[0] + vec2[1] * vec2[1]);
 
             float crossZ = vec1[0] * vec2[1] - vec1[1] * vec2[0]; // 2D cross product in the Z direction
-
+            
             if (cur_action == "forehand")
             {
                 if (crossZ > 0)
@@ -230,6 +235,7 @@ public class ActivityDetector : MonoBehaviour
             {
                 res += (float) Math.Acos(dot / mag1 / mag2);
             }
+            
         }
 
         return res * 180 / (float) Math.PI;
@@ -312,16 +318,19 @@ public class ActivityDetector : MonoBehaviour
             {
                 item.Clear();
             }
+            t.text = "Recording";
         }
         if (aButtonPressed){
             appendData(attributes);
             //t.text = CalculateAverage(data["controller_right_pos.y"]).ToString("0.0000");
-            t.text = "Recording";
         }
         if (aButtonReleased){
             cur_action = AnalyzeSwing();
             PlayAudio(cur_action);
-            t.text = cur_action+" innit?" + "\n Vel:" + MaxVelocity() + "\n Rot:" + GetRotation();
+            t.text = cur_action+" innit?";
+            t.text +=  "\n Vel:" + MaxVelocity();
+            t.text += "\n S/E:" + GetStartEndAfterClassification();
+            t.text += "\n Rot:" + GetRotation();
         }
     }
 }
