@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.54934484, g: 0.79545444, b: 0.97348726, a: 1}
+  m_IndirectSpecularColor: {r: 0.54867357, g: 0.7947518, b: 0.9690621, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &4
 LightmapSettings:
@@ -262,6 +262,9 @@ MonoBehaviour:
   cur_act: {fileID: 0}
   court: {fileID: 0}
   cnt: 0
+  racketlen: 0.68
+  cur_action: 
+  sound: Erm
 --- !u!4 &121749320
 Transform:
   m_ObjectHideFlags: 0
@@ -341,7 +344,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2954940087042456666, guid: 733a8e51553379743b11b0db8ecf7c65, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -2.491
+      value: -3.4
       objectReference: {fileID: 0}
     - target: {fileID: 2954940087042456666, guid: 733a8e51553379743b11b0db8ecf7c65, type: 3}
       propertyPath: m_LocalPosition.z
@@ -477,7 +480,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1283136667}
   m_LocalRotation: {x: -0.27059805, y: -0.6532815, z: -0.27059805, w: 0.6532815}
-  m_LocalPosition: {x: -5.55, y: 3.11, z: -0.16}
+  m_LocalPosition: {x: -5.11, y: 6.85, z: -0.16}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -499,7 +502,7 @@ TextMesh:
   m_Anchor: 4
   m_Alignment: 1
   m_TabSize: 4
-  m_FontSize: 500
+  m_FontSize: 200
   m_FontStyle: 1
   m_RichText: 1
   m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
@@ -666,7 +669,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400006, guid: ce816f2e6abb0504092c23ed9b970dfd, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.15
+      value: 0.31
       objectReference: {fileID: 0}
     - target: {fileID: 400006, guid: ce816f2e6abb0504092c23ed9b970dfd, type: 3}
       propertyPath: m_LocalPosition.z

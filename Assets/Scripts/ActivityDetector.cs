@@ -12,7 +12,9 @@ public class ActivityDetector : MonoBehaviour
     public GameObject court;
     public Dictionary<string, List<float>> data;
     public int cnt = 0;
-    float racketlen = 0.68f;
+    public float racketlen = 0.68f;
+    public string cur_action = "";
+    public string sound = "Erm";
     // Start is called before the first frame update
     void Start()
     {
@@ -31,6 +33,7 @@ public class ActivityDetector : MonoBehaviour
 
         data["controller_right_vel"] = new List<float>();
 
+        data["headset_pos.x"] = new List<float>();
         data["headset_pos.y"] = new List<float>();
         data["headset_pos.z"] = new List<float>();
         
@@ -73,13 +76,22 @@ public class ActivityDetector : MonoBehaviour
     }
 
     void appendData(Dictionary<string, UnityEngine.Vector3> attributes) {
-        data["controller_right_pos.y"].Add(attributes["controller_right_pos"].y);
         data["controller_right_vel.x"].Add(attributes["controller_right_vel"].x);
         data["controller_right_vel.y"].Add(attributes["controller_right_vel"].y);
-        data["controller_right_pos.x"].Add(attributes["controller_right_pos"].x);
-        data["controller_right_pos.z"].Add(attributes["controller_right_pos"].z);
         data["controller_right_vel.z"].Add(attributes["controller_right_vel"].z);
 
+        data["controller_right_pos.x"].Add(attributes["controller_right_pos"].x);
+        data["controller_right_pos.y"].Add(attributes["controller_right_pos"].y);
+        data["controller_right_pos.z"].Add(attributes["controller_right_pos"].z);
+
+        // Calculate the magnitude of the right controller's velocity vector
+        data["controller_right_vel"].Add( (float) Math.Sqrt(
+                Math.Pow(attributes["controller_right_vel"].x, 2) +
+                Math.Pow(attributes["controller_right_vel"].y, 2) +
+                Math.Pow(attributes["controller_right_vel"].z, 2)
+        ));
+
+        data["headset_pos.x"].Add(attributes["headset_pos"].x);
         data["headset_pos.y"].Add(attributes["headset_pos"].y);
         data["headset_pos.z"].Add(attributes["headset_pos"].z);
         
@@ -92,7 +104,7 @@ public class ActivityDetector : MonoBehaviour
 
     }
     //outputs maximimum velocity of simulated racket head in dictionary as a stirng
-    string MaxVelocity()
+    string GetMaxVelocity()
     {
         float lastx = data["racket.x"][0];
         float lasty = data["racket.y"][0];
@@ -114,20 +126,224 @@ public class ActivityDetector : MonoBehaviour
             lasty = data["racket.y"][i];
             lastz = data["racket.z"][i];
         }
-        return string.Format("{0:N2}", maxvel);
+        return string.Format("{0:N2} m/s", maxvel*72);
     }
-    string AnalyzeSwing()
+
+    (int start, int end) GetStartEndAfterClassification()
     {
-        // Calculate the magnitude of the right controller's velocity vector
-        for (int i = 0; i < data["controller_right_vel.x"].Count; i++)
+        int start = 0;
+        int end = data["controller_right_vel.z"].Count -1;
+
+        int pos = -1;
+        int neg = -1;
+        float min = float.MaxValue;
+        float max = float.MinValue;
+        int apex = -1;
+        float maxApex = float.MinValue;
+
+        for (int i = 0; i < data["controller_right_vel"].Count; i++)
         {
-            data["controller_right_vel"].Add( (float) Math.Sqrt(
-                Math.Pow(data["controller_right_vel.x"][i], 2) +
-                Math.Pow(data["controller_right_vel.y"][i], 2) +
-                Math.Pow(data["controller_right_vel.z"][i], 2)
-            ));
+            if (data["controller_right_vel"][i] > maxApex)
+            {
+                apex = i;
+                maxApex = data["controller_right_vel"][i];
+            }
         }
 
+        for (int i = 0; i < apex; i++)
+        {
+            if (data["controller_right_vel.z"][i] > max)
+            {
+                max = data["controller_right_vel.z"][i];
+                pos = i;
+            }
+        }
+
+        for (int i = apex; i < data["controller_right_vel.z"].Count; i++)
+        {
+            if (data["controller_right_vel.z"][i] < min)
+            {
+                min = data["controller_right_vel.z"][i];
+                neg = i;
+            }
+        }
+
+        for (int i = pos; i > 0; i--)
+        {
+            if (data["controller_right_vel.z"][i] >= 0.2f && data["controller_right_vel.z"][i - 1] < 0.2f)
+            {
+                start = i;
+                break;
+            }
+        }
+
+        if (cur_action != "volley")
+        {
+            for (int i = neg; i < data["controller_right_vel.z"].Count - 1; i++)
+            {
+                if (data["controller_right_vel.z"][i] <= -0.2f && data["controller_right_vel.z"][i + 1] > -0.2f)
+                {
+                    end = i + 1;
+                    break;
+                }
+            }
+        }
+        else
+        {
+            for (int i = pos; i < data["controller_right_vel.z"].Count - 1; i++)
+            {
+                if (data["controller_right_vel.z"][i] >= 0.2f && data["controller_right_vel.z"][i + 1] < 0.2f)
+                {
+                    end = i + 1;
+                    break;
+                }
+            }
+        }
+
+        return (start, end);
+    }
+    float GetRotation(){
+        var cur = GetStartEndAfterClassification();
+        int start = cur.Item1;
+        int end = cur.Item2;
+        float res = 0;
+        
+        for (int i = start; i < end-2;i++){
+            var vec1 = new float[] {data["controller_right_pos.x"][i] - data["headset_pos.x"][i], data["controller_right_pos.z"][i] - data["headset_pos.z"][i], 0};
+            var vec2 = new float[] {data["controller_right_pos.x"][i+1] - data["headset_pos.x"][i+1], data["controller_right_pos.z"][i+1] - data["headset_pos.z"][i+1], 0};
+            float dot = vec1[0] * vec2[0] + vec1[1] * vec2[1];
+            float mag1 = (float)Math.Sqrt(vec1[0] * vec1[0] + vec1[1] * vec1[1]);
+            float mag2 = (float)Math.Sqrt(vec2[0] * vec2[0] + vec2[1] * vec2[1]);
+
+            float crossZ = vec1[0] * vec2[1] - vec1[1] * vec2[0]; // 2D cross product in the Z direction
+            
+            if (cur_action == "forehand")
+            {
+                if (crossZ > 0)
+                {
+                    res += (float) Math.Acos(dot / mag1 / mag2);
+                }
+            }
+            else if (cur_action == "backhand")
+            {
+                if (crossZ < 0)
+                {
+                    res += (float) Math.Acos(dot / mag1 / mag2);
+                }
+            }
+            else
+            {
+                res += (float) Math.Acos(dot / mag1 / mag2);
+            }
+            
+        }
+
+        return res * 180 / (float) Math.PI;
+    }
+
+    //debug
+    string tup(){
+        var cur = GetStartEndAfterClassification();
+        int start = cur.Item1;
+        int end = cur.Item2;
+        var tup = new float[]
+        {
+            data["controller_right_pos.x"][end] - data["headset_pos.x"][end],
+            data["controller_right_pos.z"][end] - data["headset_pos.z"][end],
+            data["controller_right_pos.y"][end] - data["headset_pos.y"][end]
+        };
+        return string.Join(", ", tup);
+    }
+    string GetFollowThrough()
+    {
+        var cur = GetStartEndAfterClassification();
+        int start = cur.Item1;
+        int end = cur.Item2;
+        if (end - start < 10) {
+            sound = "Erm";
+            return "Are you even trying?";
+        }
+        var tup = new float[]
+        {
+            data["controller_right_pos.x"][end] - data["headset_pos.x"][end],
+            data["controller_right_pos.z"][end] - data["headset_pos.z"][end],
+            data["controller_right_pos.y"][end] - data["headset_pos.y"][end]
+        };
+
+        if (cur_action == "forehand")
+        {
+            if (tup[2] < -0.2f)
+            {
+                sound = "shoulder";
+                return "Try to follow-through a bit higher, over your shoulder!";
+            }
+            if (tup[1] > 0)
+            {
+                sound = "furtherback";
+                return "Try to end your swing further back!";
+            }
+            if (tup[0] > 0)
+            {
+                sound = "left";
+                return "Make sure to complete your follow-through on the left side of your body!";
+            }
+            sound = "forehand";
+            return "Nice follow through!";
+        }
+
+        if (cur_action == "backhand")
+        {
+            if (tup[2] < -0.2f)
+            {
+                sound = "shoulder";
+                return "Try to follow-through a bit higher, over your shoulder!";
+            }
+            if (tup[1] > 0)
+            {
+                sound = "furtherback";
+                return "Try to end your swing further back!";
+            }
+            if (tup[0] < 0)
+            {
+                sound = "right";
+                return "Make sure to complete your follow-through on the right side of your body!";
+            }
+            sound = "backhand";
+            return "Nice follow through!";
+        }
+
+        if (cur_action == "serve")
+        {
+            if (-1 * tup[2] < data["controller_right_pos.y"].Max() - data["headset_pos.y"].Max())
+            {
+                sound = "waist";
+                return "Try to finish a bit lower, near your waist!";
+            }
+            if (tup[1] > 0)
+            {
+                sound = "furtherback";
+                return "Try to end your swing further back!";
+            }
+            if (tup[0] > 0)
+            {
+                sound = "badserve";
+                return "Make sure to complete your follow-through on the left side of your body!";
+            }
+            sound = "serve";
+            return "Nice follow through!";
+
+        }
+
+        if (cur_action == "volley")
+        {
+            sound = "volley";
+            return "Nice volley!";
+        }
+        return "error";
+    }
+
+    string AnalyzeSwing()
+    {
         // Find the index of the maximum velocity
         int idxMax = -1;
         double maxVelocity = Double.NegativeInfinity;
@@ -191,16 +407,21 @@ public class ActivityDetector : MonoBehaviour
             {
                 item.Clear();
             }
+            t.text = "Recording";
+            sound = "Erm";
         }
         if (aButtonPressed){
             appendData(attributes);
-            //t.text = CalculateAverage(data["controller_right_pos.y"]).ToString("0.0000");
-            t.text = "Recording";
         }
         if (aButtonReleased){
-            string res = AnalyzeSwing();
-            PlayAudio(res);
-            t.text = res+" innit?" + "\n Vel:" + MaxVelocity();
+            cur_action = AnalyzeSwing();
+            t.text = cur_action+" innit?";
+            t.text +=  "\n Vel:" + GetMaxVelocity();
+            //t.text += "\n S/E:" + GetStartEndAfterClassification();
+            t.text += "\n Rot:" + GetRotation();
+            //t.text += "\n Tup:" + tup();
+            t.text += "\n Feedback:" + GetFollowThrough();
+            PlayAudio(sound);
         }
     }
 }
