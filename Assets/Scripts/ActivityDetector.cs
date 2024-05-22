@@ -12,8 +12,9 @@ public class ActivityDetector : MonoBehaviour
     public GameObject court;
     public Dictionary<string, List<float>> data;
     public int cnt = 0;
-    float racketlen = 0.68f;
+    public float racketlen = 0.68f;
     public string cur_action = "";
+    public string sound = "Erm";
     // Start is called before the first frame update
     void Start()
     {
@@ -125,13 +126,13 @@ public class ActivityDetector : MonoBehaviour
             lasty = data["racket.y"][i];
             lastz = data["racket.z"][i];
         }
-        return string.Format("{0:N2}", maxvel);
+        return string.Format("{0:N2} m/s", maxvel*72);
     }
 
     (int start, int end) GetStartEndAfterClassification()
     {
         int start = 0;
-        int end = data["controller_right_vel.z"].Count;
+        int end = data["controller_right_vel.z"].Count -1;
 
         int pos = -1;
         int neg = -1;
@@ -240,8 +241,8 @@ public class ActivityDetector : MonoBehaviour
         return res * 180 / (float) Math.PI;
     }
 
-    string GetFollowThrough()
-    {
+    //debug
+    string tup(){
         var cur = GetStartEndAfterClassification();
         int start = cur.Item1;
         int end = cur.Item2;
@@ -252,75 +253,91 @@ public class ActivityDetector : MonoBehaviour
             data["controller_right_pos.y"][end] - data["headset_pos.y"][end]
         };
         return string.Join(", ", tup);
+    }
+    string GetFollowThrough()
+    {
+        var cur = GetStartEndAfterClassification();
+        int start = cur.Item1;
+        int end = cur.Item2;
+        if (end - start < 10) {
+            sound = "Erm";
+            return "Are you even trying?";
+        }
+        var tup = new float[]
+        {
+            data["controller_right_pos.x"][end] - data["headset_pos.x"][end],
+            data["controller_right_pos.z"][end] - data["headset_pos.z"][end],
+            data["controller_right_pos.y"][end] - data["headset_pos.y"][end]
+        };
+
         if (cur_action == "forehand")
         {
             if (tup[2] < -0.2f)
             {
+                sound = "shoulder";
                 return "Try to follow-through a bit higher, over your shoulder!";
             }
             if (tup[1] > 0)
             {
+                sound = "furtherback";
                 return "Try to end your swing further back!";
             }
             if (tup[0] > 0)
             {
+                sound = "left";
                 return "Make sure to complete your follow-through on the left side of your body!";
             }
-
+            sound = "forehand";
             return "Nice follow through!";
-
         }
 
         if (cur_action == "backhand")
         {
             if (tup[2] < -0.2f)
             {
+                sound = "shoulder";
                 return "Try to follow-through a bit higher, over your shoulder!";
             }
             if (tup[1] > 0)
             {
+                sound = "furtherback";
                 return "Try to end your swing further back!";
             }
             if (tup[0] < 0)
             {
+                sound = "right";
                 return "Make sure to complete your follow-through on the right side of your body!";
             }
-
-                return "Nice follow through!";
+            sound = "backhand";
+            return "Nice follow through!";
         }
 
         if (cur_action == "serve")
         {
             if (-1 * tup[2] < data["controller_right_pos.y"].Max() - data["headset_pos.y"].Max())
             {
+                sound = "waist";
                 return "Try to finish a bit lower, near your waist!";
             }
             if (tup[1] > 0)
             {
+                sound = "furtherback";
                 return "Try to end your swing further back!";
             }
-            if (tup[0] < 0)
+            if (tup[0] > 0)
             {
+                sound = "badserve";
                 return "Make sure to complete your follow-through on the left side of your body!";
             }
-
-                return "Nice follow through!";
+            sound = "serve";
+            return "Nice follow through!";
 
         }
 
         if (cur_action == "volley")
         {
-            if (tup[2] > 0)
-            {
-                return "Try to keep your hand below your head in a volley!!";
-            }
-            if (tup[1] < 0)
-            {
-                return "Try to end your volley in front of your body!";
-            }
-
-                return "Nice shot!";
-
+            sound = "volley";
+            return "Nice volley!";
         }
         return "error";
     }
@@ -391,19 +408,20 @@ public class ActivityDetector : MonoBehaviour
                 item.Clear();
             }
             t.text = "Recording";
+            sound = "Erm";
         }
         if (aButtonPressed){
             appendData(attributes);
-            //t.text = CalculateAverage(data["controller_right_pos.y"]).ToString("0.0000");
         }
         if (aButtonReleased){
             cur_action = AnalyzeSwing();
-            PlayAudio(cur_action);
             t.text = cur_action+" innit?";
             t.text +=  "\n Vel:" + GetMaxVelocity();
-            t.text += "\n S/E:" + GetStartEndAfterClassification();
+            //t.text += "\n S/E:" + GetStartEndAfterClassification();
             t.text += "\n Rot:" + GetRotation();
+            //t.text += "\n Tup:" + tup();
             t.text += "\n Feedback:" + GetFollowThrough();
+            PlayAudio(sound);
         }
     }
 }
