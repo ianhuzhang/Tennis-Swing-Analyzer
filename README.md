@@ -5,6 +5,7 @@ Tennis Swing Analyzer is designed to be run on the Meta Quest 2, as a virtual te
 backhand, serve, or volley, and provide specific analytics and advice tailored to the swing type. 
 
 **Installation**
+
 There are two methods to install the app:
 1. Download the provided .apk file onto your device
 2. Clone the repository, and open it as a project in Unity. Then, build to device, making sure you are targeting an Android Meta/Oculus Quest 2 device.
