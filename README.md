@@ -1,8 +1,7 @@
 # Tennis Swing Analyzer
 By Jason Chang, Lucien Liu, Ian Zhang
 
-Tennis Swing Analyzer is designed to be run on the Meta Quest 2, as a virtual tennis coaching application that can automatically classify your swing as a forehand, \
-backhand, serve, or volley, and provide specific analytics and advice tailored to the swing type. 
+Tennis Swing Analyzer is designed to be run on the Meta Quest 2, as a virtual tennis coaching application that can automatically classify your swing as a forehand, backhand, serve, or volley, and provide specific analytics and advice tailored to the swing type. 
 
 **Installation**
 
